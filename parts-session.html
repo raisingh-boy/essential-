@@ -1,0 +1,556 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Части · Сессия</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;1,300;1,400&family=DM+Mono:wght@300;400&display=swap" rel="stylesheet">
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+:root {
+  --bg: #08090a;
+  --surface: #0f1012;
+  --txt: rgba(235,228,215,0.92);
+  --muted: rgba(235,228,215,0.35);
+  --accent: #c8b89a;
+  --glow: rgba(200,184,154,0.12);
+  --ai-bubble: #111316;
+  --user-bubble: #161a1f;
+}
+
+html, body {
+  height: 100%;
+  background: var(--bg);
+  color: var(--txt);
+  font-family: 'DM Mono', monospace;
+  overflow: hidden;
+}
+
+/* Ambient background */
+.ambient {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+}
+.ambient::before {
+  content: '';
+  position: absolute;
+  top: -20%;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 60%;
+  height: 50%;
+  background: radial-gradient(ellipse, rgba(200,184,154,0.04) 0%, transparent 70%);
+  animation: breathe 8s ease-in-out infinite;
+}
+@keyframes breathe {
+  0%,100% { opacity: 0.5; transform: translateX(-50%) scale(1); }
+  50% { opacity: 1; transform: translateX(-50%) scale(1.1); }
+}
+
+/* Layout */
+.app {
+  position: relative;
+  z-index: 1;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  max-width: 480px;
+  margin: 0 auto;
+}
+
+/* Header */
+.header {
+  padding: 52px 24px 20px;
+  border-bottom: 1px solid rgba(255,255,255,0.05);
+  flex-shrink: 0;
+}
+.header-label {
+  font-size: 9px;
+  letter-spacing: 4px;
+  color: var(--muted);
+  text-transform: uppercase;
+  margin-bottom: 8px;
+}
+.header-title {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 26px;
+  font-weight: 300;
+  color: var(--accent);
+  font-style: italic;
+}
+.header-sub {
+  font-size: 10px;
+  color: var(--muted);
+  margin-top: 6px;
+  line-height: 1.6;
+}
+
+/* Start screen */
+.start-screen {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 40px 32px;
+  text-align: center;
+  gap: 28px;
+}
+.start-orb {
+  width: 100px;
+  height: 100px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 35%, rgba(200,184,154,0.25), rgba(200,184,154,0.04));
+  border: 1px solid rgba(200,184,154,0.2);
+  animation: orbPulse 4s ease-in-out infinite;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 36px;
+}
+@keyframes orbPulse {
+  0%,100% { box-shadow: 0 0 0 0 rgba(200,184,154,0.1); }
+  50% { box-shadow: 0 0 40px 10px rgba(200,184,154,0.08); }
+}
+.start-text {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 22px;
+  font-weight: 300;
+  color: var(--txt);
+  line-height: 1.5;
+}
+.start-hint {
+  font-size: 11px;
+  color: var(--muted);
+  line-height: 1.8;
+  max-width: 280px;
+}
+.start-btn {
+  background: transparent;
+  border: 1px solid rgba(200,184,154,0.4);
+  border-radius: 100px;
+  padding: 14px 40px;
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 18px;
+  font-style: italic;
+  color: var(--accent);
+  cursor: pointer;
+  transition: all 0.3s;
+}
+.start-btn:active {
+  background: rgba(200,184,154,0.08);
+  transform: scale(0.97);
+}
+
+/* Chat area */
+.chat-area {
+  flex: 1;
+  overflow-y: auto;
+  padding: 20px 20px 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  scrollbar-width: none;
+}
+.chat-area::-webkit-scrollbar { display: none; }
+
+/* Messages */
+.msg {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  animation: msgIn 0.35s ease;
+  max-width: 88%;
+}
+@keyframes msgIn {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.msg.ai { align-self: flex-start; }
+.msg.user { align-self: flex-end; }
+
+.msg-label {
+  font-size: 9px;
+  letter-spacing: 2px;
+  color: var(--muted);
+  text-transform: uppercase;
+  padding: 0 4px;
+}
+.msg.user .msg-label { text-align: right; }
+
+.msg-bubble {
+  padding: 14px 18px;
+  border-radius: 18px;
+  line-height: 1.65;
+  font-size: 15px;
+}
+.msg.ai .msg-bubble {
+  background: var(--ai-bubble);
+  border: 1px solid rgba(255,255,255,0.06);
+  border-bottom-left-radius: 6px;
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 17px;
+  font-weight: 300;
+  color: var(--txt);
+}
+.msg.user .msg-bubble {
+  background: var(--user-bubble);
+  border: 1px solid rgba(200,184,154,0.12);
+  border-bottom-right-radius: 6px;
+  color: rgba(235,228,215,0.75);
+  font-size: 14px;
+}
+
+/* Typing indicator */
+.typing {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 14px 18px;
+  background: var(--ai-bubble);
+  border: 1px solid rgba(255,255,255,0.06);
+  border-radius: 18px;
+  border-bottom-left-radius: 6px;
+  width: fit-content;
+  animation: msgIn 0.3s ease;
+}
+.typing-dot {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--muted);
+  animation: typingDot 1.4s ease-in-out infinite;
+}
+.typing-dot:nth-child(2) { animation-delay: 0.2s; }
+.typing-dot:nth-child(3) { animation-delay: 0.4s; }
+@keyframes typingDot {
+  0%,60%,100% { opacity: 0.3; transform: translateY(0); }
+  30% { opacity: 1; transform: translateY(-4px); }
+}
+
+/* Essence state arrival */
+.essence-card {
+  background: linear-gradient(135deg, rgba(200,184,154,0.08), rgba(200,184,154,0.02));
+  border: 1px solid rgba(200,184,154,0.25);
+  border-radius: 20px;
+  padding: 28px 24px;
+  text-align: center;
+  animation: essenceIn 0.8s ease;
+  margin: 8px 0;
+}
+@keyframes essenceIn {
+  from { opacity: 0; transform: scale(0.95); }
+  to { opacity: 1; transform: scale(1); }
+}
+.essence-word {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 48px;
+  font-style: italic;
+  font-weight: 300;
+  color: var(--accent);
+  letter-spacing: 2px;
+  text-shadow: 0 0 40px rgba(200,184,154,0.4);
+}
+.essence-sub {
+  font-size: 10px;
+  letter-spacing: 3px;
+  color: var(--muted);
+  text-transform: uppercase;
+  margin-top: 10px;
+}
+
+/* Input area */
+.input-area {
+  flex-shrink: 0;
+  padding: 12px 16px 36px;
+  border-top: 1px solid rgba(255,255,255,0.05);
+  display: flex;
+  gap: 10px;
+  align-items: flex-end;
+}
+.input-wrap {
+  flex: 1;
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 16px;
+  padding: 12px 16px;
+  display: flex;
+  align-items: flex-end;
+  gap: 8px;
+  transition: border-color 0.2s;
+}
+.input-wrap:focus-within {
+  border-color: rgba(200,184,154,0.25);
+}
+textarea {
+  flex: 1;
+  background: transparent;
+  border: none;
+  outline: none;
+  color: var(--txt);
+  font-family: 'DM Mono', monospace;
+  font-size: 13px;
+  line-height: 1.5;
+  resize: none;
+  max-height: 100px;
+  min-height: 20px;
+}
+textarea::placeholder { color: var(--muted); }
+
+.send-btn {
+  width: 36px;
+  height: 36px;
+  border-radius: 12px;
+  background: rgba(200,184,154,0.15);
+  border: 1px solid rgba(200,184,154,0.25);
+  color: var(--accent);
+  font-size: 16px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: all 0.15s;
+}
+.send-btn:active { transform: scale(0.9); background: rgba(200,184,154,0.25); }
+
+/* New session btn */
+.new-session-btn {
+  background: transparent;
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 100px;
+  padding: 8px 20px;
+  font-family: 'DM Mono', monospace;
+  font-size: 10px;
+  color: var(--muted);
+  cursor: pointer;
+  margin: 0 auto 8px;
+  display: block;
+  transition: all 0.2s;
+}
+.new-session-btn:hover { color: var(--txt); border-color: rgba(255,255,255,0.15); }
+
+.hidden { display: none !important; }
+</style>
+</head>
+<body>
+
+<div class="ambient"></div>
+
+<div class="app">
+  <div class="header">
+    <div class="header-label">работа с частями · NLP</div>
+    <div class="header-title">Сущностная трансформация</div>
+    <div class="header-sub">ИИ-фасилитатор · следуй за собой</div>
+  </div>
+
+  <!-- Start screen -->
+  <div class="start-screen" id="startScreen">
+    <div class="start-orb">🌀</div>
+    <div class="start-text">Есть что-то,<br>что хочет быть услышанным?</div>
+    <div class="start-hint">Мы найдём часть внутри тебя и вместе дойдём до самой её сути</div>
+    <button class="start-btn" id="startBtn">Начать сессию</button>
+  </div>
+
+  <!-- Chat -->
+  <div class="chat-area hidden" id="chatArea"></div>
+
+  <!-- Input -->
+  <div class="input-area hidden" id="inputArea">
+    <div class="input-wrap">
+      <textarea id="userInput" placeholder="Напиши что чувствуешь..." rows="1"></textarea>
+    </div>
+    <button class="send-btn" id="sendBtn">↑</button>
+  </div>
+</div>
+
+<script>
+const SYSTEM_PROMPT = `Ты — мягкий, глубокий фасилитатор процесса Сущностной Трансформации (Essential Transformation) по методу Конниры и Тэмары Андреас, основанному на работе с частями личности из NLP.
+
+ТВОЯ РОЛЬ:
+Ты ведёшь человека через процесс шаг за шагом. Ты не интерпретируешь, не анализируешь, не даёшь советов. Ты только задаёшь вопросы и создаёшь пространство.
+
+СТРУКТУРА ПРОЦЕССА:
+1. Найти часть — попроси описать что беспокоит, мешает, или что человек хочет изменить
+2. Поблагодарить часть — "эта часть пытается тебе помочь"
+3. Найти намерение части — "чего эта часть хочет для тебя?"
+4. Идти вглубь намерений — каждый ответ → "а если бы у тебя было это полностью... чего бы ты хотел ещё глубже?"
+5. Продолжать до сущностного состояния (покой, любовь, целостность, бытие, свет, единство)
+6. Когда достигнуто — остановиться, назвать состояние, предложить побыть в нём
+
+СТИЛЬ:
+- Говори мягко, медленно, как будто у тебя есть всё время мира
+- Короткие вопросы, много пространства
+- Никогда не торопи
+- Если человек застрял — помоги мягко: "позволь себе просто почувствовать это..."
+- Используй слова человека, не свои
+- Отвечай на русском
+- Максимум 2-3 предложения за раз
+
+ВАЖНО:
+Когда человек достигает сущностного состояния (слова типа: покой, любовь, свет, целостность, просто быть, единство, тишина, бытие) — ответь так:
+ESSENCE: [слово состояния]
+И затем пригласи побыть в этом состоянии.
+
+Начни сессию с тёплого приглашения найти часть.`;
+
+let messages = [];
+let isLoading = false;
+let sessionStarted = false;
+
+const startScreen = document.getElementById('startScreen');
+const chatArea = document.getElementById('chatArea');
+const inputArea = document.getElementById('inputArea');
+const userInput = document.getElementById('userInput');
+const sendBtn = document.getElementById('sendBtn');
+
+document.getElementById('startBtn').onclick = startSession;
+
+function startSession() {
+  startScreen.classList.add('hidden');
+  chatArea.classList.remove('hidden');
+  inputArea.classList.remove('hidden');
+  sessionStarted = true;
+  messages = [];
+  sendToAI('Начни сессию');
+}
+
+function addMessage(role, text) {
+  const isEssence = role === 'ai' && text.startsWith('ESSENCE:');
+  const div = document.createElement('div');
+
+  if (isEssence) {
+    const word = text.replace('ESSENCE:', '').split('\n')[0].trim();
+    const rest = text.split('\n').slice(1).join('\n').trim();
+    div.className = 'msg ai';
+    div.innerHTML = `
+      <div class="msg-label">фасилитатор</div>
+      <div class="essence-card">
+        <div class="essence-word">${word}</div>
+        <div class="essence-sub">сущностное состояние</div>
+      </div>
+      ${rest ? `<div class="msg-bubble">${rest}</div>` : ''}
+    `;
+  } else if (role === 'ai') {
+    div.className = 'msg ai';
+    div.innerHTML = `
+      <div class="msg-label">фасилитатор</div>
+      <div class="msg-bubble">${text}</div>
+    `;
+  } else {
+    div.className = 'msg user';
+    div.innerHTML = `
+      <div class="msg-label">ты</div>
+      <div class="msg-bubble">${text}</div>
+    `;
+  }
+
+  chatArea.appendChild(div);
+  chatArea.scrollTop = chatArea.scrollHeight;
+}
+
+function showTyping() {
+  const div = document.createElement('div');
+  div.className = 'msg ai';
+  div.id = 'typing';
+  div.innerHTML = `
+    <div class="msg-label">фасилитатор</div>
+    <div class="typing">
+      <div class="typing-dot"></div>
+      <div class="typing-dot"></div>
+      <div class="typing-dot"></div>
+    </div>
+  `;
+  chatArea.appendChild(div);
+  chatArea.scrollTop = chatArea.scrollHeight;
+}
+
+function removeTyping() {
+  const t = document.getElementById('typing');
+  if (t) t.remove();
+}
+
+async function sendToAI(userText) {
+  if (isLoading) return;
+  isLoading = true;
+  sendBtn.style.opacity = '0.4';
+
+  if (userText !== 'Начни сессию') {
+    messages.push({ role: 'user', content: userText });
+    addMessage('user', userText);
+  }
+
+  showTyping();
+
+  try {
+    const apiMessages = userText === 'Начни сессию'
+      ? [{ role: 'user', content: 'Пожалуйста, начни сессию Сущностной Трансформации.' }]
+      : messages;
+
+    const response = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: 1000,
+        system: SYSTEM_PROMPT,
+        messages: apiMessages
+      })
+    });
+
+    const data = await response.json();
+    const reply = data.content?.[0]?.text || 'Что-то пошло не так...';
+
+    removeTyping();
+    messages.push({ role: 'assistant', content: reply });
+    addMessage('ai', reply);
+
+    // Add new session button after essence
+    if (reply.startsWith('ESSENCE:')) {
+      setTimeout(() => {
+        const btn = document.createElement('button');
+        btn.className = 'new-session-btn';
+        btn.textContent = '+ новая сессия';
+        btn.onclick = () => {
+          chatArea.innerHTML = '';
+          startSession();
+        };
+        chatArea.appendChild(btn);
+        chatArea.scrollTop = chatArea.scrollHeight;
+      }, 1500);
+    }
+
+  } catch (err) {
+    removeTyping();
+    addMessage('ai', 'Потеряли связь... попробуй ещё раз.');
+  }
+
+  isLoading = false;
+  sendBtn.style.opacity = '1';
+}
+
+function send() {
+  const text = userInput.value.trim();
+  if (!text || isLoading) return;
+  userInput.value = '';
+  userInput.style.height = 'auto';
+  sendToAI(text);
+}
+
+sendBtn.onclick = send;
+userInput.addEventListener('keydown', e => {
+  if (e.key === 'Enter' && !e.shiftKey) {
+    e.preventDefault();
+    send();
+  }
+});
+userInput.addEventListener('input', () => {
+  userInput.style.height = 'auto';
+  userInput.style.height = Math.min(userInput.scrollHeight, 100) + 'px';
+});
+</script>
+</body>
+</html>
